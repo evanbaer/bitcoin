@@ -15,14 +15,9 @@ if [ -d "${ROOT_DIR}/lock_fuzz_link_all" ]; then
 fi
 mkdir "${ROOT_DIR}/lock_fuzz_link_all"
 
-echo "Linking each fuzz target separately."
+echo "Symlinking each fuzz target separately."
 for FUZZING_HARNESS in $(PRINT_ALL_FUZZ_TARGETS_AND_ABORT=1 "${ROOT_DIR}/src/test/fuzz/fuzz" | sort -u); do
-    echo "Building src/test/fuzz/${FUZZING_HARNESS} ..."
-    git checkout -- "${ROOT_DIR}/src/test/fuzz/fuzz.cpp"
-    sed -i "s/std::getenv(\"FUZZ\")/\"${FUZZING_HARNESS}\"/g" "${ROOT_DIR}/src/test/fuzz/fuzz.cpp"
-    make
-    mv "${ROOT_DIR}/src/test/fuzz/fuzz" "${ROOT_DIR}/src/test/fuzz/${FUZZING_HARNESS}"
+    rm -f "${ROOT_DIR}/src/test/fuzz/${FUZZING_HARNESS}"
+    ln -s "fuzz" "${ROOT_DIR}/src/test/fuzz/${FUZZING_HARNESS}"
 done
-git checkout -- "${ROOT_DIR}/src/test/fuzz/fuzz.cpp"
-rmdir "${ROOT_DIR}/lock_fuzz_link_all"
-echo "Successfully built all fuzz targets."
+echo "Successfully symlinked all fuzz targets."
