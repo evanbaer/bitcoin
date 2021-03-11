@@ -27,7 +27,7 @@ void FuzzFrameworkRegisterTarget(std::string_view name, TypeTestOneInput target,
 
 static TypeTestOneInput* g_test_one_input{nullptr};
 
-void initialize()
+void initialize(int argc, char **argv)
 {
     if (std::getenv("PRINT_ALL_FUZZ_TARGETS_AND_ABORT")) {
         for (const auto& t : FuzzTargets()) {
@@ -36,7 +36,19 @@ void initialize()
         }
         Assert(false);
     }
-    std::string_view fuzz_target{Assert(std::getenv("FUZZ"))};
+
+    std::string_view fuzz_target;
+
+    if (argc > 0) {
+        fuzz_target = std::string_view{basename(argv[0])};
+    }
+
+    const char *fuzz_env = std::getenv("FUZZ");
+
+    if (fuzz_env != NULL) {
+        fuzz_target = std::string_view{fuzz_env};
+    }
+
     const auto it = FuzzTargets().find(fuzz_target);
     Assert(it != FuzzTargets().end());
     Assert(!g_test_one_input);
@@ -67,14 +79,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 // This function is used by libFuzzer
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
-    initialize();
+    initialize(*argc, *argv);
     return 0;
 }
 
 #if defined(PROVIDE_FUZZ_MAIN_FUNCTION)
 int main(int argc, char** argv)
 {
-    initialize();
+    initialize(argc, argv);
     static const auto& test_one_input = *Assert(g_test_one_input);
 #ifdef __AFL_INIT
     // Enable AFL deferred forkserver mode. Requires compilation using
